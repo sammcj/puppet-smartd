@@ -5,99 +5,65 @@ Puppet smartd Module
 
 #### Table of Contents
 
-1. [Overview](#overview)
-2. [Description](#description)
-3. [Usage](#usage)
-    * [Version `2.x.x` _incompatible_ API change](#version-2xx-incompatible-api-change)
-    * [Simple Usage](#simple-usage)
-    * [Parameters](#parameters)
-    * [Pedantic Example](#pedantic-example)
-    * [Hiera Data Bindings](#hiera-data-bindings)
-    * [Facts](#facts)
-4. [Limitations](#limitations)
-    * [Tested Platforms](#tested-platforms)
-5. [Versioning](#versioning)
-6. [Support](#support)
-7. [See Also](#see-also)
+<!-- MarkdownTOC -->
+
+- [Overview](#overview)
+- [Description](#description)
+  - [Forked](#forked)
+- [Usage](#usage)
+  - [Simple Usage](#simple-usage)
+  - [Parameters](#parameters)
+    - [`ensure`](#ensure)
+    - [`package_name`](#package_name)
+    - [`service_name`](#service_name)
+    - [`service_ensure`](#service_ensure)
+    - [`config_file`](#config_file)
+    - [`devicescan`](#devicescan)
+    - [`devicescan_options`](#devicescan_options)
+    - [`devices`](#devices)
+    - [`mail_to`](#mail_to)
+    - [`warning_schedule`](#warning_schedule)
+    - [`exec_script`](#exec_script)
+    - [`enable_default`](#enable_default)
+    - [`default_options`](#default_options)
+  - [Pedantic Example](#pedantic-example)
+  - [Hiera Data Bindings](#hiera-data-bindings)
+- [Limitations](#limitations)
+  - [Tested Platforms](#tested-platforms)
+- [Versioning](#versioning)
+- [Support](#support)
+- [See Also](#see-also)
+
+<!-- /MarkdownTOC -->
 
 
+<a id="overview"></a>
 Overview
 --------
 
 Manages the smartmontools package including the smartd daemon
 
 
+<a id="description"></a>
 Description
 -----------
 
 Installs the [`smartmontools`](http://smartmontools.sourceforge.net/) package
-and enables the `smartd` service.
+and enables the `smartd` service and configures as desired.
 
-If your hardware supports it, `smartd` can automatically probe for the drives,
-but if they are hidden behind a RAID controller, it will need additional help.
-The module includes a facter plugin to identify drives hiding behind an LSI
-MegaRAID/Dell PERC/Supermicro controller on Linux systems if you have the LSI
-proprietary `MegaCli` tool installed; we don't have any FreeBSD machines with
-this controller so haven't written the necessary code to use FreeBSD's standard
-`mfiutil(8)` utility instead.
-
-Currently, drives behind an LSI MegaRAID controller will be automatically
-probed and added to the `smartd` configuration file, if the `MegaCli` utility
-is installed.  There is no way to turn this behavior off.  This is arguably a
-bug.
-
-It is planned that in a future release the `megaraid` specific facts will be
-migrated into the
-[`puppet-megaraid`](https://github.com/jhoblitt/puppet-megaraid) module.
-
+<a id="forked"></a>
 ### Forked
 
 This is a fork of
-[`csail/smartd`](http://tig.csail.mit.edu/wiki/TIG/PuppetAtCSAIL) that was
-initially made primarily to fix support of probing `SATA` drives behind a LSI
-Megaraid controllers.  The author has been aware of the fork and it's hoped
-that the two modules can be merged.  Since the initial fork, a number of small
-API changes have been made to improve usage.
+[`jhoblitt/smartd`](https://github.com/jhoblitt/puppet-smartd)
 
 
+<a id="usage"></a>
 Usage
 -----
 
-### Version `2.x.x` _incompatible_ API change
 
-The `v2` API merges the `v1` API's `devices` and `device_options` parameters
-into a single parameter named `devices`, but with incompatible semantics to the
-`v1` API.
-
-`devices` now accepts an `Array` of `Hash`.  This is to allow multiple
-`smartd.conf` entries for the same blockdev as is typically required for probing
-through to individual disks behind a block device presented by a RAID
-controller.
-
-#### Old `v1` API
-
-Note that `devices` used to accept a flat `Array`.
-
-```puppet
-    class{ 'smartd':
-      devices        => [ '/dev/sg1', '/dev/sg2' ],
-      device_options => { '/dev/sg1' => '-o on -S on -a', '/dev/sg2' => '-o on -S on -a' },
-    }
-```
-
-#### New `v2` API
-
-`devices` now accepts an `Array` of `Hash`.
-
-```puppet
-    class{ 'smartd':
-      devices => [
-        { device => '/dev/sg1', options => '-o on -S on -a' },
-        { device => '/dev/sg2', options => '-o on -S on -a' },
-      ],
-    }
-```
-
+<a id="simple-usage"></a>
 ### Simple Usage
 
 ```puppet
@@ -108,10 +74,12 @@ Note that `devices` used to accept a flat `Array`.
     class{ 'smartd': }
 ```
 
+<a id="parameters"></a>
 ### Parameters
 
 All parameters are optional.
 
+<a id="ensure"></a>
 #### `ensure`
 
 `String` defaults to: `present`
@@ -119,18 +87,21 @@ All parameters are optional.
 Standard Puppet ensure semantics (and supports `purged` state if your package
 provider does). Valid values are: `present`,`latest`,`absent`,`purged`
 
+<a id="package_name"></a>
 #### `package_name`
 
 `String` defaults to: `smartmontools`
 
 Name of the smartmontools package.
 
+<a id="service_name"></a>
 #### `service_name`
 
 `String` defaults to: `smartd`
 
 Name of the smartmontools monitoring daemon.
 
+<a id="service_ensure"></a>
 #### `service_ensure`
 
 `String` defaults to: `running`
@@ -138,12 +109,14 @@ Name of the smartmontools monitoring daemon.
 State of the smartmontools monitoring daemon. Valid values are:
 `running`,`stopped`
 
+<a id="config_file"></a>
 #### `config_file`
 
 `String` defaults to: (OS-specific)
 
 Path to the configuration file for the monitoring daemon.
 
+<a id="devicescan"></a>
 #### `devicescan`
 
 `Bool` defaults to: `true`
@@ -152,6 +125,7 @@ Sets the `DEVICESCAN` directive in the smart daemon config file. Tells the
 smart daemon to automatically detect all of the SMART-capable drives in the
 system.
 
+<a id="devicescan_options"></a>
 #### `devicescan_options`
 
 `String` defaults to: `undef`
@@ -159,6 +133,7 @@ system.
 Passes options to the `DEVICESCAN` directive. `devicescan` must equal `true`
 for this to have any effect.
 
+<a id="devices"></a>
 #### `devices`
 
 `Array` of `Hash` defaults to: `[]`
@@ -169,12 +144,14 @@ Explicit list of raw block devices to check. Eg.
     [{ device => '/dev/sda', options => '-I 194' }]
 ```
 
+<a id="mail_to"></a>
 #### `mail_to`
 
 `String` defaults to: `root`
 
 Smart daemon notification email address.
 
+<a id="warning_schedule"></a>
 #### `warning_schedule`
 
 `String` defaults to: `daily`
@@ -184,6 +161,7 @@ Smart daemon problem mail notification frequency. Valid values are:
 
 If `exec` is selected, a value must be provided to `exec_script`.
 
+<a id="exec_script"></a>
 #### `exec_script`
 
 `String` defaults to: `false`
@@ -192,9 +170,10 @@ Path to the script that should be executed when problem mail notification
 should be sent. This parameter should only be set if `warning_schedule` is set
 to `exec`.
 
+<a id="enable_default"></a>
 #### `enable_default`
 
-`Bool` defaults to: `true` if `$::smartmontools_version >= 5.43`, otherwise `false`
+`Bool` defaults to: `false`
 
 Enables/disables the `DEFAULT` directive in the `smartd.conf` file.  This
 directive was added in the 5.43 release of smartmontools and is unsupported in
@@ -235,8 +214,7 @@ convention of the other parameters in this module due to this bug
 [PUP-2244](https://tickets.puppetlabs.com/browse/PUP-2244) that affects puppet
 2.7.x.
 
-Note that RHEL5 ships with 5.42 while RHEL6 ships with 5.43.
-
+<a id="default_options"></a>
 #### `default_options`
 
 `String` defaults to: `undef`
@@ -247,6 +225,7 @@ If `default` is set to `false`, this parameter's value will be set on the
 `DEVICESCAN` directive (if enabled) instead of the [absent] `DEFAULT`
 directive.
 
+<a id="pedantic-example"></a>
 ### Pedantic Example
 
 ```puppet
@@ -269,6 +248,7 @@ directive.
     }
 ```
 
+<a id="hiera-data-bindings"></a>
 ### Hiera Data Bindings
 
 ```yaml
@@ -287,99 +267,20 @@ smartd::devices:
     options: '-a -o on -S on -s (S/../.././18|L/../../3/20|C/../.././19)'
 ```
 
-### Facts
 
-#### `megacli`
-
-Path to the `MegaCli` executable. Example:
-
-    megacli => /usr/bin/MegaCli
-
-#### `megacli_version`
-
-Version string of the `MegaCli` executable. Example:
-
-    megacli_version => 8.07.07
-
-#### `megaraid_adapters`
-
-The count of LSI MegaRAID adapters detected in the system.  *Note that this
-module presently only supports a single adapter per system.* Example:
-
-    megaraid_adapters => 1
-
-#### `megaraid_fw_package_build`
-
-The LSI MegaRAID adapter firmware package string.  Example:
-
-    megaraid_fw_package_build => 23.22.0-0012
-
-#### `megaraid_fw_version`
-
-The LSI MegaRAID adapter firmware version string.  Example:
-
-    megaraid_fw_version => 3.340.05-2939
-
-#### `megaraid_physical_drives`
-
-The LSI MegaRAID unique device ID(s) for all attached disks.  Example:
-
-    megaraid_physical_drives => 116,117,120,121,122,123,124,125,126,127,128,129,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,200,201,202,203,204,205,206,207
-
-#### `megaraid_physical_drives_sas`
-
-The LSI MegaRAID unique device ID(s) for only attached *SAS* disks.  Example:
-
-    megaraid_physical_drives_sas => 116,117,120,121,122,123,124,125,126,127,128,129,131,132,133,134,135,136,137,138,139,140,187,188,189,190,191,192,193,194,195,196,197,198,200,201,202,203,204,205,206,207
-
-#### `megaraid_physical_drives_sata`
-
-The LSI MegaRAID unique device ID(s) for only attached *SATA* disks.  Example:
-
-    megaraid_physical_drives_sata => 141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186
-
-#### `megaraid_product_name`
-
-The LSI MegaRAID product name string.  Example:
-
-    megaraid_product_name => LSI MegaRAID SAS 9286CV-8e
-
-#### `megaraid_serial`
-
-The LSI MegaRAID serial number string.  Example:
-
-    megaraid_serial => SV22925366
-
-#### `megaraid_virtual_drives`
-
-A listing of `/dev/<foo>` devices exported by a LSI MegaRAID controller.  Example:
-
-    megaraid_virtual_drives => sda,sdb,sdc,sdd,sde,sdf,sdg,sdh,sdk,sdl
-
-#### `smartd`
-
-Path to the `smartd` executable. Example:
-
-    smartd => /usr/sbin/smartd
-
-#### `smartmontools_version`
-
-Version of the install `smartmontools` package. Example:
-
-    smartmontools_version => 5.43
-
-
+<a id="limitations"></a>
 Limitations
 -----------
 
+<a id="tested-platforms"></a>
 ### Tested Platforms
 
 These are the platforms that have had integration testing since the fork.
 
-* el6.x
-* el5.x
+* el7.x
 
 
+<a id="versioning"></a>
 Versioning
 ----------
 
@@ -387,12 +288,14 @@ This module is versioned according to the [Semantic Versioning
 2.0.0](http://semver.org/spec/v2.0.0.html) specification.
 
 
+<a id="support"></a>
 Support
 -------
 
-Please log tickets and issues at [github](https://github.com/jhoblitt/puppet-smartd/issues)
+Please log tickets and issues at [github](https://github.com/sammcj/puppet-smartd/issues)
 
 
+<a id="see-also"></a>
 See Also
 --------
 

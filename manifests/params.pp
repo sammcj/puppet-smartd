@@ -4,14 +4,12 @@
 #
 # === Authors
 #
-# MIT Computer Science & Artificial Intelligence Laboratory
-# Joshua Hoblitt <jhoblitt@cpan.org>
+# Sam McLeod
+# https://github.com/sammcj/puppet-smartd
 #
-# === Copyright
+# Adapted from Joshua Hoblitt <jhoblitt@cpan.org>'s module
 #
-# Copyright 2012 Massachusetts Institute of Technology
-# Copyright (C) 2013 Joshua Hoblitt
-#
+
 class smartd::params {
   $package_name       = 'smartmontools'
   $service_ensure     = 'running'
@@ -23,18 +21,7 @@ class smartd::params {
   $warning_schedule   = 'daily' # other choices: once, diminishing, exec
   $exec_script        = false
   $default_options    = undef
-
-  $version_string = $::smartmontools_version ? {
-    undef   => '0.0',
-    default => $::smartmontools_version,
-  }
-
-  # smartd.conf < 5.43 does not support the 'DEFAULT' directive
-  if versioncmp($version_string, '5.43') >= 0 {
-    $enable_default = true
-  } else {
-    $enable_default = false
-  }
+  $enable_default      = true  # smartd.conf < 5.43 does not support the 'DEFAULT' directive
 
   case $::osfamily {
     'FreeBSD': {
@@ -45,12 +32,11 @@ class smartd::params {
       $config_file = $::operatingsystem ? {
         # lint:ignore:80chars
         'Fedora'                                       => $::operatingsystemrelease ? {
-          # No, I am not going to support versions 1-9.
-          /10|11|12|13|14|15|16|17|18/ => '/etc/smartd.conf',
+          /16|17|18/ => '/etc/smartd.conf',
           default                      => '/etc/smartmontools/smartd.conf',
         },
         /RedHat|CentOS|Scientific|SLC|OracleLinux|OEL/ => $::operatingsystemmajrelease ? {
-          /4|5|6/ => '/etc/smartd.conf',
+          /5|6/ => '/etc/smartd.conf',
           default => '/etc/smartmontools/smartd.conf',
         },
         default                                        => '/etc/smartd.conf',

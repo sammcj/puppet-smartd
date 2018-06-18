@@ -22,7 +22,7 @@ describe 'smartd', :type => :class do
 
   describe 'on a supported osfamily, default parameters' do
     describe 'for osfamily SuSE' do
-      let(:facts) { { :osfamily => 'SuSE', :smartmontools_version => '5.43', :gid => 'root' } }
+      let(:facts) { { :osfamily => 'SuSE',  :gid => 'root' } }
 
       it_behaves_like 'default', {}
       it { is_expected.not_to contain_augeas('shell_config_start_smartd') }
@@ -32,22 +32,6 @@ describe 'smartd', :type => :class do
 
     describe 'for osfamily RedHat' do
       describe 'for operatingsystem RedHat' do
-        describe 'for operatingsystemmajrelease 6' do
-          let(:facts) do
-            {
-              :osfamily                  => 'RedHat',
-              :operatingsystem           => 'RedHat',
-              :operatingsystemmajrelease => '6',
-              :smartmontools_version     => '5.43',
-              :gid                       => 'root',
-            }
-          end
-
-          it_behaves_like 'default', {}
-          it { is_expected.not_to contain_augeas('shell_config_start_smartd') }
-          it { is_expected.to contain_service('smartd').with_ensure('running').with_enable(true) }
-          it { is_expected.to contain_service('smartd').with_subscribe('File[/etc/smartd.conf]') }
-        end
 
         describe 'for operatingsystemmajrelease 7' do
           let(:facts) do
@@ -55,7 +39,6 @@ describe 'smartd', :type => :class do
               :osfamily                  => 'RedHat',
               :operatingsystem           => 'RedHat',
               :operatingsystemmajrelease => '7',
-              :smartmontools_version     => '6.2',
               :gid                       => 'root',
             }
           end
@@ -68,22 +51,6 @@ describe 'smartd', :type => :class do
       end
 
       describe 'for operatingsystem Fedora' do
-        describe 'for operatingsystemrelease 18' do
-          let(:facts) do
-            {
-              :osfamily               => 'RedHat',
-              :operatingsystem        => 'Fedora',
-              :operatingsystemrelease => '18',
-              :smartmontools_version  => '5.43',
-              :gid                    => 'root',
-            }
-          end
-
-          it_behaves_like 'default', {}
-          it { is_expected.not_to contain_augeas('shell_config_start_smartd') }
-          it { is_expected.to contain_service('smartd').with_ensure('running').with_enable(true) }
-          it { is_expected.to contain_service('smartd').with_subscribe('File[/etc/smartd.conf]') }
-        end
 
         describe 'for operatingsystemrelease 19' do
           let(:facts) do
@@ -91,7 +58,6 @@ describe 'smartd', :type => :class do
               :osfamily               => 'RedHat',
               :operatingsystem        => 'Fedora',
               :operatingsystemrelease => '19',
-              :smartmontools_version  => '6.1',
               :gid                    => 'root',
             }
           end
@@ -362,24 +328,6 @@ describe 'smartd', :type => :class do
       end
 
       describe 'enable_default => ' do
-        context '(default)' do
-          context 'fact smartmontool_version = "5.43"' do
-            before { facts[:smartmontools_version] = '5.43' }
-            it do
-              is_expected.to contain_file('/etc/smartd.conf').with_ensure('present').
-                with_content(/DEFAULT -m root -M daily/)
-            end
-          end
-
-          context 'fact smartmontool_version = "5.42"' do
-            before { facts[:smartmontools_version] = '5.42' }
-            it do
-              is_expected.to contain_file('/etc/smartd.conf').with_ensure('present').
-                without_content(/DEFAULT -m root -M daily/).
-                with_content(/DEVICESCAN -m root -M daily/)
-            end
-          end
-        end # (default)
 
         context 'true' do
           let(:params) { { :enable_default => true } }
@@ -490,7 +438,6 @@ describe 'smartd', :type => :class do
     end
 
     describe 'for osfamily Debian' do
-      let(:facts) { { :osfamily => 'Debian', :smartmontools_version => '5.43' } }
 
       describe 'ensure => present' do
         let(:params) { { :ensure => 'present' } }
@@ -542,109 +489,4 @@ describe 'smartd', :type => :class do
     end
   end
 
-  describe 'megaraid support' do
-    describe 'without params + megaraid sata facts' do
-      let(:facts) do
-        {
-          :osfamily                      => 'RedHat',
-          :megaraid_adapters             => '1',
-          :megaraid_virtual_drives       => 'sdb,sda',
-          :megaraid_physical_drives_sata => '2,1',
-          :smartmontools_version         => '5.43',
-        }
-      end
-
-      it do
-        is_expected.to contain_file('/etc/smartd.conf').\
-          with_content(<<-END.gsub(/^\s+/, ''))
-            # Managed by Puppet -- do not edit!
-            DEFAULT -m root -M daily
-            /dev/sda -d sat+megaraid,1
-            /dev/sda -d sat+megaraid,2
-            DEVICESCAN
-          END
-      end
-    end
-
-    describe 'without params + megaraid sas facts' do
-      let(:facts) do
-        {
-          :osfamily                      => 'RedHat',
-          :megaraid_adapters             => '1',
-          :megaraid_virtual_drives       => 'sdb,sda',
-          :megaraid_physical_drives_sas  => '2,1',
-          :smartmontools_version         => '5.43',
-        }
-      end
-
-      it do
-        is_expected.to contain_file('/etc/smartd.conf').\
-          with_content(<<-END.gsub(/^\s+/, ''))
-            # Managed by Puppet -- do not edit!
-            DEFAULT -m root -M daily
-            /dev/sda -d megaraid,1
-            /dev/sda -d megaraid,2
-            DEVICESCAN
-          END
-      end
-    end
-
-    describe 'without params + megaraid sata+sas facts' do
-      let(:facts) do
-        {
-          :osfamily                      => 'RedHat',
-          :megaraid_adapters             => '1',
-          :megaraid_virtual_drives       => 'sdb,sda',
-          :megaraid_physical_drives_sas  => '1,2',
-          :megaraid_physical_drives_sata => '3,4',
-          :smartmontools_version         => '5.43',
-        }
-      end
-
-      it do
-        is_expected.to contain_file('/etc/smartd.conf').\
-          with_content(<<-END.gsub(/^\s+/, ''))
-            # Managed by Puppet -- do not edit!
-            DEFAULT -m root -M daily
-            /dev/sda -d sat+megaraid,3
-            /dev/sda -d sat+megaraid,4
-            /dev/sda -d megaraid,1
-            /dev/sda -d megaraid,2
-            DEVICESCAN
-          END
-      end
-    end
-
-    describe 'with params + megaraid facts' do
-      let(:facts) do
-        {
-          :osfamily                      => 'RedHat',
-          :megaraid_adapters             => '1',
-          :megaraid_virtual_drives       => 'sdb,sda',
-          :megaraid_physical_drives_sata => '2,1',
-          :smartmontools_version         => '5.43',
-        }
-      end
-      let(:params) do
-        {
-          :devices => [{ 'device' => 'megaraid', 'options' => '-I 194' }],
-        }
-      end
-
-      it do
-        is_expected.to contain_class('smartd')
-        is_expected.to contain_class('smartd::params')
-        is_expected.to contain_package('smartmontools')
-        is_expected.to contain_service('smartd')
-        is_expected.to contain_file('/etc/smartd.conf').\
-          with_content(<<-END.gsub(/^\s+/, ''))
-            # Managed by Puppet -- do not edit!
-            DEFAULT -m root -M daily
-            /dev/sda -d sat+megaraid,1 -I 194
-            /dev/sda -d sat+megaraid,2 -I 194
-            DEVICESCAN
-          END
-      end
-    end
-  end
 end
